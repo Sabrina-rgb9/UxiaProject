@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="#FFFFFF"
+    android:padding="16dp">
+
+    <!-- Botón para recibir imagen -->
+    <Button
+        android:id="@+id/btn_receive_image"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:text="RECEBIR\nIMATGE"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:background="#4CAF50"
+        android:textColor="#FFFFFF"
+        android:enabled="false"
+        android:alpha="0.5" />
+
+    <!-- Mensaje cuando no hay dispositivo -->
+    <TextView
+        android:id="@+id/tv_no_device_selected"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="No hi ha dispositiu ESP32 seleccionat\n\nToca aquí per anar a Ajustos"
+        android:textSize="16sp"
+        android:textColor="#FF5722"
+        android:gravity="center"
+        android:textStyle="bold"
+        android:layout_marginTop="32dp"
+        android:padding="16dp"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <!-- Estado de conexión -->
+    <TextView
+        android:id="@+id/tv_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Estat: Preparat"
+        android:textSize="16sp"
+        android:textColor="#333333"
+        android:layout_marginTop="16dp"
+        android:visibility="gone" />
+
+</LinearLayout>

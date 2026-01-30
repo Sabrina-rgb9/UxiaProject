@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">UxiaProject</string>
+    <string name="historial">Historial</string>
+    <string name="ajustos">Ajustos</string>
 </resources>
