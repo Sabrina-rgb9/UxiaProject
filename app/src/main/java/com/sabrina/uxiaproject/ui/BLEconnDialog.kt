@@ -11,9 +11,6 @@ import android.widget.TextView
 import java.io.File
 import java.util.*
 
-import com.sabrina.uxiaproject.R
-
-
 class BLEconnDialog(
     context: Context,
     private val device: BluetoothDevice,
