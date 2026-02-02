@@ -15,7 +15,7 @@ import androidx.fragment.app.Fragment
 
 class AjustosFragment : Fragment() {
 
-    private lateinit var sharedPreferences: SharedPreferences
+    private lateinit var jsonSettings: JsonSettings
     private lateinit var tvSelectedDevice: TextView
     private lateinit var btnSelectDevice: Button
     private lateinit var btnClearDevice: Button
@@ -33,7 +33,7 @@ class AjustosFragment : Fragment() {
         btnSelectDevice = view.findViewById(R.id.btn_select_device)
         btnClearDevice = view.findViewById(R.id.btn_clear_device)
 
-        sharedPreferences = requireContext().getSharedPreferences("UXIA_PREFS", Context.MODE_PRIVATE)
+        jsonSettings = JsonSettings(requireContext())
 
         btnSelectDevice.setOnClickListener {
             openBluetoothSelection()
@@ -55,10 +55,11 @@ class AjustosFragment : Fragment() {
     }
 
     private fun updateDeviceInfo() {
-        val deviceAddress = sharedPreferences.getString("ESP32_DEVICE_ADDRESS", null)
-        val deviceName = sharedPreferences.getString("ESP32_DEVICE_NAME", null)
+        // Cambiado: usar JsonSettings
+        val device = jsonSettings.getSelectedDevice()
 
-        if (deviceAddress != null && deviceName != null) {
+        if (device != null) {
+            val (deviceName, deviceAddress) = device
             tvSelectedDevice.text = "Dispositiu seleccionat:\nNom: $deviceName\nAdreça: $deviceAddress"
             btnClearDevice.visibility = View.VISIBLE
         } else {
@@ -68,11 +69,8 @@ class AjustosFragment : Fragment() {
     }
 
     private fun clearSelectedDevice() {
-        sharedPreferences.edit()
-            .remove("ESP32_DEVICE_NAME")
-            .remove("ESP32_DEVICE_ADDRESS")
-            .apply()
-
+        // Cambiado: usar JsonSettings
+        jsonSettings.clearSelectedDevice()
         updateDeviceInfo()
         Toast.makeText(requireContext(), "Dispositiu esborrat", Toast.LENGTH_SHORT).show()
     }
@@ -85,10 +83,8 @@ class AjustosFragment : Fragment() {
             val deviceAddress = data?.getStringExtra("DEVICE_ADDRESS")
 
             if (deviceName != null && deviceAddress != null) {
-                sharedPreferences.edit()
-                    .putString("ESP32_DEVICE_NAME", deviceName)
-                    .putString("ESP32_DEVICE_ADDRESS", deviceAddress)
-                    .apply()
+                // Cambiado: guardar en JSON en lugar de SharedPreferences
+                jsonSettings.saveSelectedDevice(deviceName, deviceAddress)
 
                 updateDeviceInfo()
                 Toast.makeText(requireContext(), "Dispositiu guardat: $deviceName", Toast.LENGTH_SHORT).show()

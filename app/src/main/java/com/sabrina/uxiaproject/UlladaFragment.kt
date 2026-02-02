@@ -26,7 +26,7 @@ class UlladaFragment : Fragment(), BLEconnDialog.BLEConnectionCallback {
     private lateinit var btnReceiveImage: Button
     private lateinit var tvNoDeviceSelected: TextView
     private lateinit var tvStatus: TextView
-    private lateinit var sharedPreferences: SharedPreferences
+    private lateinit var jsonSettings: JsonSettings
     private var bleDialog: BLEconnDialog? = null
 
     private val requestPermissionLauncher = registerForActivityResult(
@@ -52,7 +52,7 @@ class UlladaFragment : Fragment(), BLEconnDialog.BLEConnectionCallback {
         tvNoDeviceSelected = view.findViewById(R.id.tv_no_device_selected)
         tvStatus = view.findViewById(R.id.tv_status)
 
-        sharedPreferences = requireContext().getSharedPreferences("UXIA_PREFS", Context.MODE_PRIVATE)
+        jsonSettings = JsonSettings(requireContext())
 
         btnReceiveImage.setOnClickListener {
             onReceiveImageClicked()
@@ -73,10 +73,11 @@ class UlladaFragment : Fragment(), BLEconnDialog.BLEConnectionCallback {
     }
 
     private fun updateButtonState() {
-        val deviceAddress = sharedPreferences.getString("ESP32_DEVICE_ADDRESS", null)
-        val deviceName = sharedPreferences.getString("ESP32_DEVICE_NAME", null)
+        // Cambiado: usar JsonSettings
+        val device = jsonSettings.getSelectedDevice()
 
-        if (deviceAddress != null && deviceName != null) {
+        if (device != null) {
+            val (deviceName, deviceAddress) = device
             btnReceiveImage.isEnabled = true
             btnReceiveImage.alpha = 1.0f
             tvNoDeviceSelected.visibility = View.GONE
@@ -91,9 +92,9 @@ class UlladaFragment : Fragment(), BLEconnDialog.BLEConnectionCallback {
     }
 
     private fun onReceiveImageClicked() {
-        val deviceAddress = sharedPreferences.getString("ESP32_DEVICE_ADDRESS", null)
+        val device = jsonSettings.getSelectedDevice()
 
-        if (deviceAddress == null) {
+        if (device == null) {
             Toast.makeText(requireContext(), "Selecciona un dispositivo primero", Toast.LENGTH_SHORT).show()
             navigateToAjustos()
             return
@@ -121,7 +122,9 @@ class UlladaFragment : Fragment(), BLEconnDialog.BLEConnectionCallback {
 
     @SuppressLint("MissingPermission")
     private fun startBluetoothConnection() {
-        val deviceAddress = sharedPreferences.getString("ESP32_DEVICE_ADDRESS", null) ?: return
+        // Cambiado: usar JsonSettings
+        val device = jsonSettings.getSelectedDevice() ?: return
+        val (_, deviceAddress) = device
 
         try {
             val bluetoothManager = requireContext().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
