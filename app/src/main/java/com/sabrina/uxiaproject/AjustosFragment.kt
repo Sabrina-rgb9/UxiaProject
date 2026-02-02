@@ -36,7 +36,7 @@ class AjustosFragment : Fragment() {
         sharedPreferences = requireContext().getSharedPreferences("UXIA_PREFS", Context.MODE_PRIVATE)
 
         btnSelectDevice.setOnClickListener {
-            openRealBluetoothSelection()  // ¡ESTA ES LA FUNCIÓN REAL!
+            openBluetoothSelection()
         }
 
         btnClearDevice.setOnClickListener {
@@ -48,8 +48,8 @@ class AjustosFragment : Fragment() {
         return view
     }
 
-    private fun openRealBluetoothSelection() {
-        // ESTO ES REAL - busca dispositivos Bluetooth reales
+    private fun openBluetoothSelection() {
+        // Abrir actividad REAL de selección Bluetooth
         val intent = Intent(requireContext(), BluetoothSelectionActivity::class.java)
         startActivityForResult(intent, REQUEST_CODE_BLUETOOTH)
     }
@@ -59,10 +59,10 @@ class AjustosFragment : Fragment() {
         val deviceName = sharedPreferences.getString("ESP32_DEVICE_NAME", null)
 
         if (deviceAddress != null && deviceName != null) {
-            tvSelectedDevice.text = "✅ Dispositiu seleccionat:\nNom: $deviceName\nAdreça: $deviceAddress"
+            tvSelectedDevice.text = "Dispositiu seleccionat:\nNom: $deviceName\nAdreça: $deviceAddress"
             btnClearDevice.visibility = View.VISIBLE
         } else {
-            tvSelectedDevice.text = "⚠️ Cap dispositiu ESP32 seleccionat"
+            tvSelectedDevice.text = "Cap dispositiu ESP32 seleccionat"
             btnClearDevice.visibility = View.GONE
         }
     }
@@ -91,7 +91,7 @@ class AjustosFragment : Fragment() {
                     .apply()
 
                 updateDeviceInfo()
-                Toast.makeText(requireContext(), "✅ Dispositiu guardat: $deviceName", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Dispositiu guardat: $deviceName", Toast.LENGTH_SHORT).show()
 
                 // Volver automáticamente a Ullada
                 requireActivity().supportFragmentManager.popBackStack()

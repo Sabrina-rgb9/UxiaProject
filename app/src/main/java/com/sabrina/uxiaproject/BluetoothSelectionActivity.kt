@@ -102,7 +102,7 @@ class BluetoothSelectionActivity : AppCompatActivity() {
 
     private fun checkBluetoothAndLoadDevices() {
         if (bluetoothAdapter == null) {
-            tvStatus.text = "❌ Bluetooth no suportat"
+            tvStatus.text = "Bluetooth no suportat"
             Toast.makeText(this, "Aquest dispositiu no suporta Bluetooth", Toast.LENGTH_LONG).show()
             finish()
             return
@@ -131,7 +131,7 @@ class BluetoothSelectionActivity : AppCompatActivity() {
 
     @SuppressLint("MissingPermission")
     private fun loadPairedDevices() {
-        tvStatus.text = "🔍 Cercant dispositius aparellats..."
+        tvStatus.text = "Cercant dispositius aparellats..."
         progressBar.visibility = View.VISIBLE
         tvEmpty.visibility = View.GONE
 
@@ -155,11 +155,11 @@ class BluetoothSelectionActivity : AppCompatActivity() {
             progressBar.visibility = View.GONE
 
             if (deviceList.isEmpty()) {
-                tvStatus.text = "📭 Cap dispositiu aparellat trobat"
+                tvStatus.text = "Cap dispositiu aparellat trobat"
                 tvEmpty.visibility = View.VISIBLE
                 tvEmpty.text = "No hi ha dispositius Bluetooth aparellats\n\nConnecta el teu ESP32 primer des dels Ajusts del sistema"
             } else {
-                tvStatus.text = "✅ ${deviceList.size} dispositius trobats"
+                tvStatus.text = "${deviceList.size} dispositius trobats"
 
                 // Configurar adaptador
                 recyclerView.adapter = BluetoothDeviceAdapter(deviceList) { device ->

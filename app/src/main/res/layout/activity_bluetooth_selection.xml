@@ -19,7 +19,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🔍 Selecciona ESP32"
+            android:text="Selecciona ESP32"
             android:textSize="22sp"
             android:textColor="#000000"
             android:textStyle="bold"

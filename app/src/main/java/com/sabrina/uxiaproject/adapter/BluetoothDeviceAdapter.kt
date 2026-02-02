@@ -1,3 +1,4 @@
+/*
 package com.sabrina.uxiaproject.adapter
 
 import android.view.LayoutInflater
@@ -36,4 +37,4 @@ class BluetoothDeviceAdapter(
             deviceAddress.text = device.address
         }
     }
-}
+}*/

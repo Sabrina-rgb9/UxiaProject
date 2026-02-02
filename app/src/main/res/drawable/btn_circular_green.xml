@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+
+    <!-- Color primario #8BC6CC -->
+    <solid android:color="#8BC6CC" />
+
+    <!-- Borde con color secundario -->
+    <stroke
+        android:width="2dp"
+        android:color="#476568" />
+
+    <padding
+        android:left="16dp"
+        android:top="16dp"
+        android:right="16dp"
+        android:bottom="16dp" />
+
+</shape>
