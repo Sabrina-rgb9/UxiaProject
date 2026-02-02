@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/dialog_layout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:gravity="center">
+
+    <!-- Icono Bluetooth -->
+    <ImageView
+        android:id="@+id/iconBluetooth"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:src="@android:drawable/ic_menu_upload"
+        android:layout_marginBottom="16dp"
+        android:tint="#2196F3" />
+
+    <!-- Nombre del dispositivo -->
+    <TextView
+        android:id="@+id/deviceNameText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Dispositiu Bluetooth"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Barra de progreso -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="24dp"
+        android:layout_marginBottom="16dp"
+        android:progressTint="#4CAF50"
+        android:max="100"
+        android:progress="0" />
+
+    <!-- Texto de estado -->
+    <TextView
+        android:id="@+id/statusText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Iniciant connexió..."
+        android:textSize="14sp"
+        android:textColor="#333333"
+        android:layout_marginBottom="24dp"
+        android:gravity="center" />
+
+</LinearLayout>

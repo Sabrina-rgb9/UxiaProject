@@ -2,23 +2,36 @@ package com.sabrina.uxiaproject
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothManager
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import com.sabrina.uxiaproject.ui.BLEconnDialog // Tu diálogo REAL
+import com.sabrina.uxiaproject.ui.BLEconnDialog
 import java.io.File
+import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.*
+
+import android.content.ContentValues
+
 
 class UlladaFragment : Fragment(), BLEconnDialog.BLEConnectionCallback {
 
@@ -28,6 +41,40 @@ class UlladaFragment : Fragment(), BLEconnDialog.BLEConnectionCallback {
     private lateinit var sharedPreferences: SharedPreferences
 
     private var bleDialog: BLEconnDialog? = null
+
+    // Para permisos de almacenamiento
+    private val storagePermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.values.all { it }
+        if (allGranted) {
+            startBluetoothConnection()
+        } else {
+            tvStatus.text = "❌ Permisos denegats"
+            Toast.makeText(
+                requireContext(),
+                "Necessitis permisos per guardar imatges",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    // Para permisos de Bluetooth
+    private val bluetoothPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.values.all { it }
+        if (allGranted) {
+            checkStoragePermissions()
+        } else {
+            tvStatus.text = "❌ Permisos Bluetooth denegats"
+            Toast.makeText(
+                requireContext(),
+                "Necessitis permisos Bluetooth",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -43,7 +90,7 @@ class UlladaFragment : Fragment(), BLEconnDialog.BLEConnectionCallback {
         sharedPreferences = requireContext().getSharedPreferences("UXIA_PREFS", Context.MODE_PRIVATE)
 
         btnReceiveImage.setOnClickListener {
-            startRealBluetoothConnection()
+            connectAndReceiveImage()
         }
 
         tvNoDeviceSelected.setOnClickListener {
@@ -81,8 +128,7 @@ class UlladaFragment : Fragment(), BLEconnDialog.BLEConnectionCallback {
         }
     }
 
-    @SuppressLint("MissingPermission")
-    private fun startRealBluetoothConnection() {
+    private fun connectAndReceiveImage() {
         val deviceAddress = sharedPreferences.getString("ESP32_DEVICE_ADDRESS", null)
 
         if (deviceAddress == null) {
@@ -90,35 +136,56 @@ class UlladaFragment : Fragment(), BLEconnDialog.BLEConnectionCallback {
             return
         }
 
+        // 1. Verificar permisos Bluetooth
         if (!checkBluetoothPermissions()) {
             requestBluetoothPermissions()
             return
         }
 
+        // 2. Verificar Bluetooth activado
         val bluetoothManager = requireContext().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         val bluetoothAdapter = bluetoothManager.adapter
 
-        if (!bluetoothAdapter.isEnabled) {
+        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled) {
             Toast.makeText(requireContext(), "Activa el Bluetooth", Toast.LENGTH_SHORT).show()
+            val enableBtIntent = Intent(android.bluetooth.BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            startActivity(enableBtIntent)
             return
         }
 
-        val device = bluetoothAdapter.getRemoteDevice(deviceAddress)
-
-        // Usar tu BLEconnDialog REAL
-        bleDialog = BLEconnDialog(requireContext(), device, this)
-        bleDialog?.apply {
-            setCancelable(false)
-            show()
-        }
-
-        tvStatus.text = "⏳ Connectant amb ESP32..."
+        // 3. Verificar permisos de almacenamiento
+        checkStoragePermissions()
     }
 
-    // CALLBACKS del BLEconnDialog REAL
+    private fun startBluetoothConnection() {
+        val deviceAddress = sharedPreferences.getString("ESP32_DEVICE_ADDRESS", null) ?: return
+
+        try {
+            val bluetoothManager = requireContext().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+            val bluetoothAdapter = bluetoothManager.adapter
+
+            @SuppressLint("MissingPermission")
+            val device = bluetoothAdapter.getRemoteDevice(deviceAddress)
+
+            // Mostrar diálogo BLEconnDialog
+            bleDialog = BLEconnDialog(requireContext(), device, this)
+            bleDialog?.show()
+
+            tvStatus.text = "⏳ Connectant amb ESP32..."
+
+        } catch (e: SecurityException) {
+            tvStatus.text = "❌ Error de permisos"
+            Toast.makeText(requireContext(), "Error de permisos: ${e.message}", Toast.LENGTH_LONG).show()
+        } catch (e: Exception) {
+            tvStatus.text = "❌ Error: ${e.message}"
+            Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    // CALLBACKS de BLEconnDialog
     override fun onConnectionSuccess(gatt: BluetoothGatt) {
         requireActivity().runOnUiThread {
-            tvStatus.text = "✅ Connectat! Rebotant imatge..."
+            tvStatus.text = "✅ Connectat! Prem 'Sol·licitar Imatge'"
             Toast.makeText(requireContext(), "Connectat amb èxit!", Toast.LENGTH_SHORT).show()
         }
     }
@@ -140,10 +207,75 @@ class UlladaFragment : Fragment(), BLEconnDialog.BLEConnectionCallback {
     override fun onReceivedImage(file: File) {
         requireActivity().runOnUiThread {
             tvStatus.text = "✅ Imatge rebuda!"
-            Toast.makeText(requireContext(), "Imatge rebuda: ${file.name}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                requireContext(),
+                "Imatge rebuda: ${file.name}",
+                Toast.LENGTH_LONG
+            ).show()
 
-            // Aquí guardarías la imagen en la galería
-            saveImageToGallery(file)
+            // Mover a galería
+            moveToGallery(file)
+        }
+    }
+
+    private fun moveToGallery(sourceFile: File) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Para Android 10+
+                saveImageToGalleryAndroid10Plus(sourceFile)
+            } else {
+                // Para Android 9 y anteriores
+                saveImageToGalleryLegacy(sourceFile)
+            }
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Error guardant imatge: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun saveImageToGalleryLegacy(sourceFile: File) {
+        val albumDir = File(
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
+            "UXIA"
+        )
+
+        if (!albumDir.exists()) {
+            albumDir.mkdirs()
+        }
+
+        val destFile = File(albumDir, sourceFile.name)
+
+        if (sourceFile.renameTo(destFile)) {
+            // Notificar a la galería
+            val mediaScanIntent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
+            mediaScanIntent.data = Uri.fromFile(destFile)
+            requireContext().sendBroadcast(mediaScanIntent)
+
+            Toast.makeText(requireContext(), "Imatge guardada a UXIA/", Toast.LENGTH_LONG).show()
+        } else {
+            // Si rename falla, copiar
+            sourceFile.copyTo(destFile, overwrite = true)
+            Toast.makeText(requireContext(), "Imatge copiada a UXIA/", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun saveImageToGalleryAndroid10Plus(sourceFile: File) {
+        val values = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, sourceFile.name)
+            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/UXIA")
+        }
+
+        val resolver = requireContext().contentResolver
+        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+
+        uri?.let {
+            resolver.openOutputStream(it)?.use { outputStream ->
+                sourceFile.inputStream().use { inputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+
+            Toast.makeText(requireContext(), "Imatge guardada a la galeria", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -151,12 +283,14 @@ class UlladaFragment : Fragment(), BLEconnDialog.BLEConnectionCallback {
         val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             arrayOf(
                 Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.BLUETOOTH_SCAN
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.ACCESS_FINE_LOCATION
             )
         } else {
             arrayOf(
                 Manifest.permission.BLUETOOTH,
-                Manifest.permission.BLUETOOTH_ADMIN
+                Manifest.permission.BLUETOOTH_ADMIN,
+                Manifest.permission.ACCESS_FINE_LOCATION
             )
         }
 
@@ -178,12 +312,33 @@ class UlladaFragment : Fragment(), BLEconnDialog.BLEConnectionCallback {
             )
         }
 
-        requestPermissions(permissions, 101)
+        bluetoothPermissionLauncher.launch(permissions)
     }
 
-    private fun saveImageToGallery(file: File) {
-        // TODO: Implementar guardado en galería en álbum "UXIA"
-        Toast.makeText(requireContext(), "Guardant imatge a la galeria...", Toast.LENGTH_SHORT).show()
+    private fun checkStoragePermissions(): Boolean {
+        val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            arrayOf(
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.POST_NOTIFICATIONS
+            )
+        } else {
+            arrayOf(
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            )
+        }
+
+        val allGranted = permissions.all {
+            ContextCompat.checkSelfPermission(requireContext(), it) == PackageManager.PERMISSION_GRANTED
+        }
+
+        if (allGranted) {
+            startBluetoothConnection()
+            return true
+        } else {
+            storagePermissionLauncher.launch(permissions)
+            return false
+        }
     }
 
     override fun onDestroy() {

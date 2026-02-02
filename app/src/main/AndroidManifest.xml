@@ -6,34 +6,48 @@
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-    <!-- Permisos para Android 12+ -->
+    <!-- Para Android 12+ -->
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
-    <!-- Permisos para guardar imágenes -->
+    <!-- Para almacenar imágenes -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <!-- Para Android 13+ -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Para Android 10+ -->
+    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
 
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="UXIA Project"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+        tools:targetApi="31">
 
+        <!-- Actividad principal -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="UXIA Project">
+            android:label="UXIA Project"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Actividad de selección Bluetooth REAL -->
+        <activity
+            android:name=".BluetoothSelectionActivity"
+            android:exported="false"
+            android:label="Seleccionar ESP32"
+            android:theme="@style/Theme.AppCompat.Light.Dialog"
+            android:screenOrientation="portrait" />
 
     </application>
 </manifest>

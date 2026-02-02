@@ -36,7 +36,7 @@ class AjustosFragment : Fragment() {
         sharedPreferences = requireContext().getSharedPreferences("UXIA_PREFS", Context.MODE_PRIVATE)
 
         btnSelectDevice.setOnClickListener {
-            openBluetoothSelection()
+            openRealBluetoothSelection()  // ¡ESTA ES LA FUNCIÓN REAL!
         }
 
         btnClearDevice.setOnClickListener {
@@ -48,8 +48,8 @@ class AjustosFragment : Fragment() {
         return view
     }
 
-    private fun openBluetoothSelection() {
-        // ESTO ES REAL - busca dispositivos de verdad
+    private fun openRealBluetoothSelection() {
+        // ESTO ES REAL - busca dispositivos Bluetooth reales
         val intent = Intent(requireContext(), BluetoothSelectionActivity::class.java)
         startActivityForResult(intent, REQUEST_CODE_BLUETOOTH)
     }
@@ -91,9 +91,9 @@ class AjustosFragment : Fragment() {
                     .apply()
 
                 updateDeviceInfo()
-                Toast.makeText(requireContext(), "Dispositiu guardat: $deviceName", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "✅ Dispositiu guardat: $deviceName", Toast.LENGTH_SHORT).show()
 
-                // Volver a Ullada automáticamente
+                // Volver automáticamente a Ullada
                 requireActivity().supportFragmentManager.popBackStack()
             }
         }

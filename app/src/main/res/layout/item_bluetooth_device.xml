@@ -6,21 +6,31 @@
     android:padding="16dp"
     android:background="?android:attr/selectableItemBackground"
     android:clickable="true"
-    android:focusable="true">
+    android:focusable="true"
+    android:layout_marginBottom="8dp">
+
+    <!-- Icono Bluetooth -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="📱"
+        android:textSize="24sp"
+        android:layout_marginBottom="8dp" />
 
     <TextView
         android:id="@+id/deviceName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Device Name"
+        android:text="Nom del dispositiu"
         android:textSize="18sp"
-        android:textColor="#000000" />
+        android:textColor="#000000"
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/deviceAddress"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="AA:BB:CC:DD:EE:FF"
+        android:text="00:00:00:00:00:00"
         android:textSize="14sp"
         android:textColor="#666666"
         android:layout_marginTop="4dp" />
