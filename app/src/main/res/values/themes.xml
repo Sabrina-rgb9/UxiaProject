@@ -1,9 +1,36 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.UxiaProject" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
-    </style>
+    <style name="Theme.UxiaProject" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- TIPOGRAFÍA -->
+        <item name="fontFamily">@font/dinnextw1g</item>
+        <item name="android:fontFamily">@font/dinnextw1g</item>
 
-    <style name="Theme.UxiaProject" parent="Base.Theme.UxiaProject" />
+        <!-- TU PALETA DE COLORES -->
+        <!-- Color primario: #8BC6CC (azul turquesa) -->
+        <item name="colorPrimary">#FF8BC6CC</item>
+        <item name="colorOnPrimary">#FFFFFFFF</item>
+        <item name="colorPrimaryContainer">#FF8BC6CC</item>
+        <item name="colorOnPrimaryContainer">#FF000000</item>
+
+        <!-- Color secundario: #476568 (azul turquesa oscuro) -->
+        <item name="colorSecondary">#FF476568</item>
+        <item name="colorOnSecondary">#FFFFFFFF</item>
+        <item name="colorSecondaryContainer">#FF476568</item>
+        <item name="colorOnSecondaryContainer">#FFFFFFFF</item>
+
+        <!-- Color de fondo y superficie -->
+        <item name="colorOnBackground">#FF000000</item>
+        <item name="colorSurface">#FFFFFFFF</item>
+        <item name="colorOnSurface">#FF000000</item>
+
+        <!-- Color de error -->
+        <item name="colorError">#FFB00020</item>
+        <item name="colorOnError">#FFFFFFFF</item>
+
+        <!-- Para Outline (bordes) -->
+        <item name="colorOutline">#FF8BC6CC</item>
+
+        <!-- Color para botones destacados -->
+        <item name="colorPrimaryFixed">#FF8BC6CC</item>
+        <item name="colorOnPrimaryFixed">#FFFFFFFF</item>
+    </style>
 </resources>

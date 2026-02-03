@@ -167,7 +167,7 @@ class UlladaFragment : Fragment(), BLEconnDialog.BLEConnectionCallback {
     // ¡IMPORTANTE! Solo actualizar UI, NO guardar de nuevo
     override fun onReceivedImage(file: File) {
         requireActivity().runOnUiThread {
-            tvStatus.text = "✅ Imagen guardada en álbum UXIA"
+            tvStatus.text = "Imagen guardada en álbum UXIA"
 
             // Solo mostrar notificación, el diálogo ya guardó la imagen
             Toast.makeText(

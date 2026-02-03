@@ -485,14 +485,14 @@ class BLEconnDialog(
 
             statusText.text = "Guardado en álbum UXIA"
 
-            // Mostrar toast
+/*            // Mostrar toast
             handler.post {
                 Toast.makeText(
                     context,
                     "Imagen guardada en álbum UXIA",
                     Toast.LENGTH_LONG
                 ).show()
-            }
+            }*/
 
             // Llamar callback
             callback.onReceivedImage(imageFile)
