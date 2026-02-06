@@ -9,10 +9,12 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -23,6 +25,7 @@ import java.io.File
 
 class UlladaFragment : Fragment(), BLEconnDialog.BLEConnectionCallback {
 
+    private lateinit var imageViewReceived: ImageView
     private lateinit var btnReceiveImage: Button
     private lateinit var tvNoDeviceSelected: TextView
     private lateinit var tvStatus: TextView
@@ -51,6 +54,7 @@ class UlladaFragment : Fragment(), BLEconnDialog.BLEConnectionCallback {
         btnReceiveImage = view.findViewById(R.id.btn_receive_image)
         tvNoDeviceSelected = view.findViewById(R.id.tv_no_device_selected)
         tvStatus = view.findViewById(R.id.tv_status)
+        imageViewReceived = view.findViewById(R.id.imageViewReceived)
 
         jsonSettings = JsonSettings(requireContext())
 
@@ -164,20 +168,27 @@ class UlladaFragment : Fragment(), BLEconnDialog.BLEConnectionCallback {
         }
     }
 
-    // ¡IMPORTANTE! Solo actualizar UI, NO guardar de nuevo
     override fun onReceivedImage(file: File) {
         requireActivity().runOnUiThread {
-            tvStatus.text = "Imagen guardada en álbum UXIA"
+            tvStatus.text = "Imagen recibida!"
 
-            // Solo mostrar notificación, el diálogo ya guardó la imagen
+            // MOSTRAR LA IMAGEN EN EL FRAGMENTO
+            try {
+                val bitmap = android.graphics.BitmapFactory.decodeFile(file.absolutePath)
+                if (bitmap != null) {
+                    imageViewReceived.visibility = View.VISIBLE
+                    imageViewReceived.setImageBitmap(bitmap)
+                    tvStatus.text = "Imagen recibida: ${file.name}"
+                }
+            } catch (e: Exception) {
+                Log.e("Ullada", "Error mostrando imagen: ${e.message}")
+            }
+
             Toast.makeText(
                 requireContext(),
                 "Imagen guardada: ${file.name}",
                 Toast.LENGTH_LONG
             ).show()
-
-            // NO LLAMAR A saveImageToUXIAAlbum aquí
-            // El BLEconnDialog ya guardó la imagen
         }
     }
 

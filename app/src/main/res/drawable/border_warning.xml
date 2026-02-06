@@ -1,22 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="#F8FDFE"
+    android:padding="32dp">
 
-    <!-- Fondo blanco (color terciario) -->
-    <solid android:color="#FFFFFF" />
+    <!-- BOTÓN GRANDE PARA RECIBIR IMAGEN - MÁS SUTIL -->
+    <Button
+        android:id="@+id/btn_receive_image"
+        android:layout_width="180dp"
+        android:layout_height="180dp"
+        android:text="\nRECIBIR\nIMAGEN"
+        android:textSize="18sp"
+        android:textStyle="normal"
+        android:gravity="center"
+        android:background="@drawable/btn_circular_green"
+        android:textColor="#FFFFFF"
+        android:enabled="false"
+        android:alpha="0.6"
+        android:layout_marginBottom="20dp" />
 
-    <!-- Borde con color secundario -->
-    <stroke
-        android:width="1.5dp"
-        android:color="#476568" />
+    <!-- MENSAJE CUANDO NO HAY DISPOSITIVO - MÁS SUTIL -->
+    <TextView
+        android:id="@+id/tv_no_device_selected"
+        android:layout_width="260dp"
+        android:layout_height="wrap_content"
+        android:text="\nNo hay dispositivo ESP32 seleccionado\n\nToca aquí para ir a Ajustos"
+        android:textSize="14sp"
+        android:textColor="#5D7B83"
+        android:gravity="center"
+        android:textStyle="normal"
+        android:layout_marginTop="24dp"
+        android:padding="20dp"
+        android:background="@drawable/border_warning"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone" />
 
-    <!-- Bordes redondeados -->
-    <corners android:radius="12dp" />
+    <!-- ESTADO DE LA CONEXIÓN - MÁS SUTIL -->
+    <TextView
+        android:id="@+id/tv_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:textColor="#5D7B83"
+        android:layout_marginTop="16dp"
+        android:visibility="gone" />
 
-    <padding
-        android:left="16dp"
-        android:top="16dp"
-        android:right="16dp"
-        android:bottom="16dp" />
-
-</shape>
+</LinearLayout>

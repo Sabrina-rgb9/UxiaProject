@@ -21,6 +21,10 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.min
 
+import android.graphics.BitmapFactory
+import android.view.View
+import android.widget.ImageView
+
 class BLEconnDialog(
     context: Context,
     private val device: android.bluetooth.BluetoothDevice,
@@ -41,10 +45,14 @@ class BLEconnDialog(
         const val CLIENT_CHARACTERISTIC_CONFIG = "00002902-0000-1000-8000-00805f9b34fb"
     }
 
+
+
     // Views
     private lateinit var progressBar: ProgressBar
     private lateinit var statusText: TextView
     private lateinit var deviceNameText: TextView
+
+    private lateinit var imageView: ImageView  // Añade esta línea
 
     // BLE
     private var bluetoothGatt: BluetoothGatt? = null
@@ -98,10 +106,13 @@ class BLEconnDialog(
         val view = inflater.inflate(R.layout.dialog_ble_connection, null)
         setView(view)
 
-        // Inicializar vistas
+        // Tus inicializaciones actuales:
         progressBar = view.findViewById(R.id.progressBar)
         statusText = view.findViewById(R.id.statusText)
         deviceNameText = view.findViewById(R.id.deviceNameText)
+
+        // AÑADE ESTA LÍNEA:
+        imageView = view.findViewById(R.id.imageView)  // ← NUEVO
 
         deviceNameText.text = "ESP32\n${device.address}"
 
@@ -445,7 +456,7 @@ class BLEconnDialog(
             val timestamp = System.currentTimeMillis()
             val filename = "UXIA_${timestamp}.jpg"
 
-            // Guardar al directorio Pictures/UXIA
+            // Guardar al directorio Pictures/UXIA (TU código)
             val picturesDir = Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES
             )
@@ -464,7 +475,21 @@ class BLEconnDialog(
             Log.d("Photo", "Foto guardada: ${imageFile.absolutePath}")
             Log.d("Photo", "Tamaño del archivo: ${imageFile.length()} bytes")
 
-            // Verificar si es JPEG válido
+            // ========== AÑADIR: MOSTRAR IMAGEN EN EL DIALOGO ==========
+            handler.post {
+                // Mostrar la ImageView
+                imageView.visibility = View.VISIBLE
+
+                // Decodificar y mostrar la imagen
+                val bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.size)
+                if (bitmap != null) {
+                    imageView.setImageBitmap(bitmap)
+                    Log.d("Photo", "Imagen mostrada en diálogo: ${bitmap.width}x${bitmap.height}")
+                }
+            }
+            // =========================================================
+
+            // Verificar si es JPEG válido (TU código)
             val isValidJpeg = imageData.size >= 2 &&
                     imageData[0].toInt() == 0xFF &&
                     imageData[1].toInt() == 0xD8
@@ -473,31 +498,21 @@ class BLEconnDialog(
                 Log.d("Photo", "✓ JPEG válido")
             } else {
                 Log.d("Photo", "⚠ Los datos NO son JPEG válido")
-                // Mostrar primeros bytes para diagnóstico
                 val firstBytes = imageData.take(10).joinToString("") { "%02X".format(it) }
                 Log.d("Photo", "Primeros bytes: $firstBytes")
             }
 
-            // Notificar galería (EXACTAMENTE COMO LA REFERENCIA)
+            // Notificar galería (TU código)
             val mediaScanIntent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
             mediaScanIntent.data = Uri.fromFile(imageFile)
             context.sendBroadcast(mediaScanIntent)
 
             statusText.text = "Guardado en álbum UXIA"
 
-/*            // Mostrar toast
-            handler.post {
-                Toast.makeText(
-                    context,
-                    "Imagen guardada en álbum UXIA",
-                    Toast.LENGTH_LONG
-                ).show()
-            }*/
-
-            // Llamar callback
+            // Llamar callback (TU código)
             callback.onReceivedImage(imageFile)
 
-            // Cerrar después de 3 segundos
+            // Cerrar después de 3 segundos (TU código)
             handler.postDelayed({
                 dismiss()
             }, 3000)

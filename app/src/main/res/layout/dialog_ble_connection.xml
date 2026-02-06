@@ -27,7 +27,7 @@
         android:textStyle="bold"
         android:layout_marginBottom="8dp" />
 
-    <!-- Barra de progreso -->
+    <!-- Barra de progreso (YA EXISTE) -->
     <ProgressBar
         android:id="@+id/progressBar"
         style="?android:attr/progressBarStyleHorizontal"
@@ -46,7 +46,17 @@
         android:text="Iniciant connexió..."
         android:textSize="14sp"
         android:textColor="#333333"
-        android:layout_marginBottom="24dp"
+        android:layout_marginBottom="16dp"
         android:gravity="center" />
+
+    <!-- IMAGEVIEW NUEVA (PARA MOSTRAR LA IMAGEN) -->
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_marginTop="8dp"
+        android:scaleType="fitCenter"
+        android:background="#F5F5F5"
+        android:visibility="gone" />
 
 </LinearLayout>

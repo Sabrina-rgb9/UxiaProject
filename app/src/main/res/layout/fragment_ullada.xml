@@ -7,6 +7,31 @@
     android:background="#F8FDFE"
     android:padding="32dp">
 
+    <!-- IMAGEN RECIBIDA (se mostrará aquí) -->
+    <ImageView
+        android:id="@+id/imageViewReceived"
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:layout_marginBottom="24dp"
+        android:scaleType="fitCenter"
+        android:background="#F5F5F5"
+        android:visibility="gone" />
+
+    <!-- BOTÓN GRANDE PARA RECIBIR IMAGEN -->
+    <Button
+        android:id="@+id/btn_receive_image"
+        android:layout_width="180dp"
+        android:layout_height="180dp"
+        android:text="\nRECIBIR\nIMAGEN"
+        android:textSize="18sp"
+        android:textStyle="normal"
+        android:gravity="center"
+        android:background="@drawable/btn_circular_green"
+        android:textColor="#FFFFFF"
+        android:enabled="false"
+        android:alpha="0.6"
+        android:layout_marginBottom="20dp" />
+
     <!-- BOTÓN GRANDE PARA RECIBIR IMAGEN - MÁS SUTIL -->
     <Button
         android:id="@+id/btn_receive_image"
