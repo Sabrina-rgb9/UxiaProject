@@ -6,16 +6,8 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="24dp"
-    android:gravity="center">
+    android:gravity="center_horizontal">
 
-    <!-- Icono Bluetooth -->
-    <ImageView
-        android:id="@+id/iconBluetooth"
-        android:layout_width="64dp"
-        android:layout_height="64dp"
-        android:src="@android:drawable/ic_menu_upload"
-        android:layout_marginBottom="16dp"
-        app:tint="#2196F3" />
 
     <!-- Nombre del dispositivo -->
     <TextView
@@ -23,22 +15,33 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Dispositiu Bluetooth"
-        android:textSize="16sp"
+        android:textSize="18sp"
         android:textStyle="bold"
-        android:layout_marginBottom="8dp" />
+        android:textColor="#476568"
+        android:layout_marginBottom="4dp" />
+
+    <!-- Dirección MAC -->
+    <TextView
+        android:id="@+id/deviceAddressText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="00:00:00:00:00:00"
+        android:textSize="14sp"
+        android:textColor="#666666"
+        android:layout_marginBottom="24dp" />
 
     <!-- Barra de progreso -->
     <ProgressBar
         android:id="@+id/progressBar"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
-        android:layout_height="24dp"
-        android:layout_marginBottom="16dp"
-        android:progressTint="#4CAF50"
+        android:layout_height="8dp"
+        android:layout_marginBottom="12dp"
+        android:progressTint="#8BC6CC"
         android:max="100"
         android:progress="0" />
 
-    <!-- Texto de estado -->
+    <!-- Texto de estado y porcentaje -->
     <TextView
         android:id="@+id/statusText"
         android:layout_width="wrap_content"
@@ -46,7 +49,51 @@
         android:text="Iniciant connexió..."
         android:textSize="14sp"
         android:textColor="#333333"
-        android:layout_marginBottom="24dp"
+        android:layout_marginBottom="8dp"
         android:gravity="center" />
+
+    <!-- Contador de bytes -->
+    <TextView
+        android:id="@+id/bytesText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0/0 bytes"
+        android:textSize="12sp"
+        android:textColor="#999999"
+        android:gravity="center"
+        android:visibility="gone" />
+
+    <!-- Vista previa de imagen -->
+    <ImageView
+        android:id="@+id/previewImage"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:scaleType="centerCrop"
+        android:visibility="gone"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/border_highlight" />
+
+    <!-- Botones - FALTABAN en tu XML -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:layout_marginTop="16dp">
+
+        <Button
+            android:id="@+id/btnCancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancel·lar"
+            android:layout_marginEnd="8dp" />
+
+        <Button
+            android:id="@+id/btnConnect"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Connectar" />
+
+    </LinearLayout>
 
 </LinearLayout>

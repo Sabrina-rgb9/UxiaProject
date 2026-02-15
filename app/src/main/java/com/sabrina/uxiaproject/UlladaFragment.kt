@@ -9,6 +9,7 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -179,6 +180,13 @@ class UlladaFragment : Fragment(), BLEconnDialog.BLEConnectionCallback {
             // NO LLAMAR A saveImageToUXIAAlbum aquí
             // El BLEconnDialog ya guardó la imagen
         }
+    }
+
+    // Añade este método en UlladaFragment.kt
+    override fun onProgressUpdate(current: Int, total: Int) {
+        // Opcional: si quieres mostrar también progreso en el fragment
+        // Puedes actualizar algún TextView o barra de progreso aquí
+        Log.d("UlladaFragment", "Progreso: $current/$total")
     }
 
     // Verificación de permisos

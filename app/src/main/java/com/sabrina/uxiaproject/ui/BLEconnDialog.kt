@@ -1,25 +1,31 @@
 package com.sabrina.uxiaproject.ui
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.bluetooth.*
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.*
 import android.util.Base64
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
+import android.widget.Button
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.RequiresPermission
 import com.sabrina.uxiaproject.R
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.math.min
 
 class BLEconnDialog(
     context: Context,
@@ -32,40 +38,46 @@ class BLEconnDialog(
         fun onConnectionFailed(error: String)
         fun onConnectionCancelled()
         fun onReceivedImage(file: File)
+        fun onProgressUpdate(current: Int, total: Int)
     }
 
-    // UUIDs del ESP32
     companion object {
         const val ESP32_SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
         const val ESP32_CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8"
         const val CLIENT_CHARACTERISTIC_CONFIG = "00002902-0000-1000-8000-00805f9b34fb"
     }
 
-    // Views
+    // Views - Declaradas como lateinit pero todas se inicializarán en onCreate
     private lateinit var progressBar: ProgressBar
     private lateinit var statusText: TextView
     private lateinit var deviceNameText: TextView
+    private lateinit var deviceAddressText: TextView
+    private lateinit var bytesText: TextView
+    private lateinit var previewImage: ImageView
+    private lateinit var btnCancel: Button
+    private lateinit var btnConnect: Button
+    private lateinit var iconBluetooth: ImageView
 
     // BLE
     private var bluetoothGatt: BluetoothGatt? = null
     private val handler = Handler(Looper.getMainLooper())
     private var isConnected = false
     private var isConnecting = false
-    private val CONNECTION_TIMEOUT = 15000L // 15 segundos
+    private val CONNECTION_TIMEOUT = 15000L
 
-    // Variables para recepción de imagen (COMO LA APP DE REFERENCIA)
+    // Variables para recepción de imagen
     private val receivedData = ByteArrayOutputStream()
     private var totalSize = 0
     private var isReceiving = false
     private var bytesReceived = 0
-    private val RECEIVE_TIMEOUT = 30000L // 30 segundos
+    private val RECEIVE_TIMEOUT = 30000L
     private var packetCount = 0
     private var lastPacketTime = 0L
 
     // Timeouts
     private val connectionTimeoutRunnable = Runnable {
         if (isConnecting) {
-            statusText.text = "Timeout de conexión"
+            updateStatus("Timeout de conexión", true)
             disconnect()
             callback.onConnectionFailed("Timeout de conexión")
             dismiss()
@@ -74,7 +86,7 @@ class BLEconnDialog(
 
     private val receiveTimeoutRunnable = Runnable {
         if (isReceiving) {
-            statusText.text = "Timeout en recepción"
+            updateStatus("Timeout en recepción", true)
             Log.e("BLE", "Timeout en recepción de imagen")
             resetPhotoTransfer()
             Toast.makeText(context, "Timeout recibiendo imagen", Toast.LENGTH_SHORT).show()
@@ -82,8 +94,7 @@ class BLEconnDialog(
     }
 
     init {
-        setTitle("Conectando con ESP32")
-        setMessage("Dispositivo: ${device.address}")
+        setTitle("Conectant amb ESP32")
         setCancelable(true)
         setOnCancelListener {
             disconnect()
@@ -91,6 +102,7 @@ class BLEconnDialog(
         }
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -98,25 +110,72 @@ class BLEconnDialog(
         val view = inflater.inflate(R.layout.dialog_ble_connection, null)
         setView(view)
 
-        // Inicializar vistas
-        progressBar = view.findViewById(R.id.progressBar)
-        statusText = view.findViewById(R.id.statusText)
-        deviceNameText = view.findViewById(R.id.deviceNameText)
+        // INICIALIZAR TODAS LAS VISTAS AQUÍ
+        initializeViews(view)
 
-        deviceNameText.text = "ESP32\n${device.address}"
+        // Configurar valores iniciales
+        setupInitialUI()
 
         // Configurar botones
-        setButton(BUTTON_NEGATIVE, "Cancelar") { _, _ ->
+        setupButtons()
+
+        // Iniciar conexión
+        connectToDevice()
+    }
+
+    private fun initializeViews(view: View) {
+        // Inicializar TODAS las vistas lateinit
+        deviceNameText = view.findViewById(R.id.deviceNameText)
+        deviceAddressText = view.findViewById(R.id.deviceAddressText)
+        progressBar = view.findViewById(R.id.progressBar)
+        statusText = view.findViewById(R.id.statusText)
+        bytesText = view.findViewById(R.id.bytesText)
+        previewImage = view.findViewById(R.id.previewImage)
+        btnCancel = view.findViewById(R.id.btnCancel)
+        btnConnect = view.findViewById(R.id.btnConnect)
+    }
+
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    private fun setupInitialUI() {
+        // Configurar valores iniciales
+        deviceNameText.text = device.name ?: "ESP32"
+        deviceAddressText.text = device.address
+        previewImage.visibility = View.GONE
+        bytesText.visibility = View.GONE
+        progressBar.isIndeterminate = true
+        statusText.text = "Iniciant connexió..."
+    }
+
+    private fun setupButtons() {
+        btnCancel.setOnClickListener {
             disconnect()
             callback.onConnectionCancelled()
             dismiss()
         }
 
-        // Ocultar botón positivo (la referencia no lo tiene)
-        setButton(BUTTON_POSITIVE, "") { _, _ -> }
+        btnConnect.text = "Connectant..."
+        btnConnect.isEnabled = false
+    }
 
-        // Iniciar conexión
-        connectToDevice()
+    private fun updateStatus(message: String, showIndeterminate: Boolean = false) {
+        handler.post {
+            statusText.text = message
+            if (showIndeterminate) {
+                progressBar.isIndeterminate = true
+            }
+        }
+    }
+
+    private fun updateProgress(current: Int, total: Int) {
+        handler.post {
+            progressBar.isIndeterminate = false
+            progressBar.max = total
+            progressBar.progress = current
+            val percent = if (total > 0) (current * 100) / total else 0
+            statusText.text = "Rebent: $percent%"
+            bytesText.visibility = View.VISIBLE
+            bytesText.text = "$current/$total bytes"
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -124,20 +183,17 @@ class BLEconnDialog(
         if (isConnecting) return
 
         isConnecting = true
-        statusText.text = "Conectando..."
-        progressBar.isIndeterminate = true
+        updateStatus("Connectant...", true)
 
-        // Configurar timeout
         handler.postDelayed(connectionTimeoutRunnable, CONNECTION_TIMEOUT)
 
-        // Conectar usando aplicación context
         try {
             bluetoothGatt = device.connectGatt(context.applicationContext, false, gattCallback)
-            Log.d("BLE", "Iniciando conexión con ${device.address}")
+            Log.d("BLE", "Iniciant connexió amb ${device.address}")
         } catch (e: Exception) {
-            statusText.text = "Error de conexión"
-            Toast.makeText(context, "Error al conectar: ${e.message}", Toast.LENGTH_SHORT).show()
-            callback.onConnectionFailed("Error de conexión: ${e.message}")
+            updateStatus("Error de connexió: ${e.message}", false)
+            Toast.makeText(context, "Error al connectar: ${e.message}", Toast.LENGTH_SHORT).show()
+            callback.onConnectionFailed("Error de connexió: ${e.message}")
             dismiss()
         }
     }
@@ -151,7 +207,7 @@ class BLEconnDialog(
             bluetoothGatt?.disconnect()
             bluetoothGatt?.close()
         } catch (e: Exception) {
-            Log.e("BLE", "Error al desconectar: ${e.message}")
+            Log.e("BLE", "Error al desconnectar: ${e.message}")
         }
 
         bluetoothGatt = null
@@ -159,7 +215,7 @@ class BLEconnDialog(
         isConnecting = false
         isReceiving = false
 
-        Log.d("BLE", "Desconectado")
+        Log.d("BLE", "Desconnectat")
     }
 
     private val gattCallback = object : BluetoothGattCallback() {
@@ -168,29 +224,25 @@ class BLEconnDialog(
             handler.post {
                 when (newState) {
                     BluetoothProfile.STATE_CONNECTED -> {
-                        // Cancelar timeout de conexión
                         handler.removeCallbacks(connectionTimeoutRunnable)
                         isConnecting = false
                         isConnected = true
 
-                        statusText.text = "¡Conectado! Buscando servicios..."
-                        Log.d("BLE", "Conectado al dispositivo")
+                        updateStatus("Connectat! Cercant serveis...", true)
 
-                        // Solicitar MTU más grande
                         try {
                             gatt.requestMtu(517)
                         } catch (e: Exception) {
-                            Log.e("BLE", "Error solicitando MTU")
+                            Log.e("BLE", "Error sol·licitant MTU")
                         }
 
-                        // Descubrir servicios
                         handler.postDelayed({
                             try {
                                 gatt.discoverServices()
-                                Log.d("BLE", "Descubriendo servicios...")
+                                Log.d("BLE", "Descobrint serveis...")
                             } catch (e: Exception) {
-                                statusText.text = "Error descubriendo servicios"
-                                callback.onConnectionFailed("Error descubriendo servicios")
+                                updateStatus("Error descobrint serveis", false)
+                                callback.onConnectionFailed("Error descobrint serveis")
                             }
                         }, 500)
                     }
@@ -200,20 +252,12 @@ class BLEconnDialog(
                         isConnecting = false
                         isConnected = false
 
-                        if (status == BluetoothGatt.GATT_SUCCESS) {
-                            statusText.text = "Desconectado"
-                            Log.d("BLE", "Desconectado normalmente")
+                        val errorMsg = if (status == BluetoothGatt.GATT_SUCCESS) {
+                            "Desconnectat"
                         } else {
-                            val errorMsg = when (status) {
-                                0x08 -> "Timeout"
-                                0x13 -> "Terminado por host local"
-                                0x16 -> "Terminado por host remoto"
-                                0x3E -> "No conectado"
-                                else -> "Error: 0x${status.toString(16).uppercase(Locale.US)}"
-                            }
-                            statusText.text = "Error: $errorMsg"
-                            Log.e("BLE", "Error de conexión: $errorMsg")
+                            "Error de connexió: 0x${status.toString(16)}"
                         }
+                        updateStatus(errorMsg, false)
                     }
                 }
             }
@@ -222,7 +266,7 @@ class BLEconnDialog(
         override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
             handler.post {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
-                    Log.d("BLE", "MTU cambiado a: $mtu bytes")
+                    Log.d("BLE", "MTU canviat a: $mtu bytes")
                 }
             }
         }
@@ -231,19 +275,13 @@ class BLEconnDialog(
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             handler.post {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
-                    statusText.text = "Servicios encontrados"
-                    Log.d("BLE", "Servicios descubiertos")
+                    updateStatus("Serveis trobats", true)
 
                     try {
-                        // Buscar nuestro servicio ESP32
                         val service = gatt.getService(UUID.fromString(ESP32_SERVICE_UUID))
                         if (service != null) {
-                            Log.d("BLE", "✓ Servicio ESP32 encontrado")
                             val characteristic = service.getCharacteristic(UUID.fromString(ESP32_CHARACTERISTIC_UUID))
                             if (characteristic != null) {
-                                Log.d("BLE", "✓ Característica de imagen encontrada")
-
-                                // Habilitar notificaciones
                                 gatt.setCharacteristicNotification(characteristic, true)
 
                                 val descriptor = characteristic.getDescriptor(
@@ -253,36 +291,33 @@ class BLEconnDialog(
                                     descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
                                     gatt.writeDescriptor(descriptor)
 
-                                    statusText.text = "¡Listo para recibir imágenes!"
-                                    progressBar.isIndeterminate = false
-                                    progressBar.progress = 0
+                                    handler.post {
+                                        statusText.text = "Esperant imatge..."
+                                        progressBar.isIndeterminate = false
+                                        progressBar.progress = 0
+                                        btnConnect.text = "Connectat"
+                                    }
 
                                     callback.onConnectionSuccess(gatt)
-                                    Log.d("BLE", "✓ Configuración BLE completada")
-
                                 } else {
-                                    val error = "Descriptor no encontrado"
-                                    statusText.text = "Error: $error"
-                                    callback.onConnectionFailed(error)
+                                    updateStatus("Error: Descriptor no trobat", false)
+                                    callback.onConnectionFailed("Descriptor no trobat")
                                 }
                             } else {
-                                val error = "Característica no encontrada"
-                                statusText.text = "Error: $error"
-                                callback.onConnectionFailed(error)
+                                updateStatus("Error: Característica no trobada", false)
+                                callback.onConnectionFailed("Característica no trobada")
                             }
                         } else {
-                            val error = "Servicio ESP32 no encontrado"
-                            statusText.text = "Error: $error"
-                            callback.onConnectionFailed(error)
+                            updateStatus("Error: Servei ESP32 no trobat", false)
+                            callback.onConnectionFailed("Servei ESP32 no trobat")
                         }
                     } catch (e: Exception) {
-                        statusText.text = "Error de configuración"
-                        callback.onConnectionFailed("Error de configuración: ${e.message}")
+                        updateStatus("Error de configuració: ${e.message}", false)
+                        callback.onConnectionFailed("Error de configuració: ${e.message}")
                     }
                 } else {
-                    val error = "Error descubriendo servicios: $status"
-                    statusText.text = "Error: $error"
-                    callback.onConnectionFailed(error)
+                    updateStatus("Error descobrint serveis: $status", false)
+                    callback.onConnectionFailed("Error descobrint serveis: $status")
                 }
             }
         }
@@ -294,60 +329,31 @@ class BLEconnDialog(
             val data = characteristic.value
             if (data.isNotEmpty()) {
                 handler.post {
-                    handleIncomingData(data)  // Usar el mismo nombre que la app de referencia
-                }
-            }
-        }
-
-        @SuppressLint("MissingPermission")
-        override fun onCharacteristicWrite(
-            gatt: BluetoothGatt,
-            characteristic: BluetoothGattCharacteristic,
-            status: Int
-        ) {
-            // No necesitamos escribir en este caso
-        }
-
-        override fun onDescriptorWrite(
-            gatt: BluetoothGatt,
-            descriptor: BluetoothGattDescriptor,
-            status: Int
-        ) {
-            handler.post {
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                    Log.d("BLE", "Descriptor configurado correctamente")
+                    handleIncomingData(data)
                 }
             }
         }
     }
 
-    // MÉTODO handleIncomingData COMO LA APP DE REFERENCIA
     private fun handleIncomingData(data: ByteArray) {
         packetCount++
         lastPacketTime = System.currentTimeMillis()
 
-        Log.d("BLE", "Paquete $packetCount recibido: ${data.size} bytes")
-        Log.d("BLE", "Primeros bytes: ${data.take(4).joinToString("") { "%02X".format(it) }}")
+        Log.d("BLE", "Paquet $packetCount rebut: ${data.size} bytes")
 
-        // Verificar si es paquete de finalización (COMO LA REFERENCIA)
+        // Verificar paquete de finalización
         if (data.size == 4 && data.contentEquals(
-                byteArrayOf(
-                    0xFF.toByte(),
-                    0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte()
-                )
+                byteArrayOf(0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte())
             )
         ) {
             if (isReceiving && receivedData.size() > 0) {
                 completePhotoTransfer()
-            } else {
-                statusText.text = "Finalización sin datos"
             }
             return
         }
 
-        // Primer paquete (puede ser el tamaño) - COMO LA REFERENCIA
+        // Primer paquete (tamaño)
         if (!isReceiving && data.size == 4) {
-            // Intentar interpretar como tamaño de 32 bits
             try {
                 totalSize = (data[0].toInt() and 0xFF) +
                         ((data[1].toInt() and 0xFF) shl 8) +
@@ -358,44 +364,41 @@ class BLEconnDialog(
                 receivedData.reset()
                 bytesReceived = 0
 
-                statusText.text = "Recibiendo foto ($totalSize bytes)..."
-                progressBar.max = totalSize
-                progressBar.progress = 0
+                handler.post {
+                    statusText.text = "Rebent imatge..."
+                    progressBar.max = totalSize
+                    progressBar.progress = 0
+                    progressBar.isIndeterminate = false
+                    bytesText.visibility = View.VISIBLE
+                    bytesText.text = "0/$totalSize bytes"
+                }
 
-                Log.d("BLE", "Tamaño anunciado: $totalSize bytes")
-
-                // Iniciar timeout
+                Log.d("BLE", "Mida anunciada: $totalSize bytes")
                 startReceiveTimeout()
 
             } catch (e: Exception) {
-                Log.e("BLE", "Error interpretando tamaño: ${e.message}")
+                Log.e("BLE", "Error interpretant mida: ${e.message}")
             }
             return
         }
 
-        // Si estamos recibiendo, agregar datos - COMO LA REFERENCIA
+        // Recibiendo datos
         if (isReceiving) {
             receivedData.write(data)
             bytesReceived += data.size
 
             val currentSize = receivedData.size()
-            progressBar.progress = currentSize
 
-            // Actualizar estado cada ciertos paquetes
-            if (packetCount % 10 == 0 || currentSize == totalSize) {
-                val percent = if (totalSize > 0)
-                    (currentSize * 100) / totalSize else 0
+            // Actualizar progreso
+            updateProgress(currentSize, totalSize)
 
-                statusText.text =
-                    "Recibiendo: $currentSize/$totalSize bytes ($percent%)"
+            // Enviar progreso al callback
+            callback.onProgressUpdate(currentSize, totalSize)
 
-                Log.d("BLE", "Progreso: $currentSize/$totalSize ($percent%)")
-            }
-
-            // Reiniciar timeout con cada paquete
+            // Reiniciar timeout
             resetReceiveTimeout()
 
-            // Si hemos llegado al tamaño esperado, completar
+            // Completar si llegamos al tamaño esperado
             if (totalSize > 0 && currentSize >= totalSize) {
                 completePhotoTransfer()
             }
@@ -412,40 +415,54 @@ class BLEconnDialog(
         handler.postDelayed(receiveTimeoutRunnable, RECEIVE_TIMEOUT)
     }
 
-    // MÉTODO completePhotoTransfer COMO LA APP DE REFERENCIA
     private fun completePhotoTransfer() {
-        val finalSize = receivedData.size()
-
         handler.post {
-            statusText.text = "Foto recibida: $finalSize bytes"
-            progressBar.progress = finalSize
-
-            // EXACTAMENTE COMO LA APP DE REFERENCIA
-            val dataStr = receivedData.toString().trim()
-            Log.v("FOTO", "Datos recibidos como string")
-
-            try {
-                val decodedData = Base64.decode(dataStr, Base64.DEFAULT)
-                savePhoto(decodedData)
-                Log.v("BT", "Foto recibida: $finalSize bytes")
-            } catch (e: Exception) {
-                Log.v("ERROR", "Error en descodificación base64: ${e.message}")
-                // Intentar guardar directo como último recurso
-                savePhoto(receivedData.toByteArray())
-            }
-
-            // Reset
-            resetPhotoTransfer()
+            statusText.text = "Processant imatge..."
+            progressBar.isIndeterminate = true
+            bytesText.visibility = View.GONE
         }
+
+        // Procesar en segundo plano
+        Thread {
+            try {
+                val dataStr = receivedData.toString().trim()
+                val decodedData = try {
+                    Base64.decode(dataStr, Base64.DEFAULT)
+                } catch (e: Exception) {
+                    Log.e("BLE", "Error en Base64, usant dades raw: ${e.message}")
+                    receivedData.toByteArray()
+                }
+
+                saveAndDisplayPhoto(decodedData)
+            } catch (e: Exception) {
+                handler.post {
+                    statusText.text = "Error processant imatge"
+                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }.start()
     }
 
-    // MÉTODO savePhoto COMO LA APP DE REFERENCIA
-    private fun savePhoto(imageData: ByteArray) {
+    private fun saveAndDisplayPhoto(imageData: ByteArray) {
         try {
-            val timestamp = System.currentTimeMillis()
+            // Mostrar imagen en preview
+            val bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.size)
+
+            handler.post {
+                if (bitmap != null) {
+                    previewImage.setImageBitmap(bitmap)
+                    previewImage.visibility = View.VISIBLE
+                    statusText.text = "Imatge rebuda correctament"
+                    progressBar.visibility = View.GONE
+                } else {
+                    statusText.text = "Error: No s'ha pogut decodificar la imatge"
+                }
+            }
+
+            // Guardar en álbum
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
             val filename = "UXIA_${timestamp}.jpg"
 
-            // Guardar al directorio Pictures/UXIA
             val picturesDir = Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES
             )
@@ -462,56 +479,28 @@ class BLEconnDialog(
             }
 
             Log.d("Photo", "Foto guardada: ${imageFile.absolutePath}")
-            Log.d("Photo", "Tamaño del archivo: ${imageFile.length()} bytes")
 
-            // Verificar si es JPEG válido
-            val isValidJpeg = imageData.size >= 2 &&
-                    imageData[0].toInt() == 0xFF &&
-                    imageData[1].toInt() == 0xD8
-
-            if (isValidJpeg) {
-                Log.d("Photo", "✓ JPEG válido")
-            } else {
-                Log.d("Photo", "⚠ Los datos NO son JPEG válido")
-                // Mostrar primeros bytes para diagnóstico
-                val firstBytes = imageData.take(10).joinToString("") { "%02X".format(it) }
-                Log.d("Photo", "Primeros bytes: $firstBytes")
-            }
-
-            // Notificar galería (EXACTAMENTE COMO LA REFERENCIA)
+            // Notificar galería
             val mediaScanIntent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
             mediaScanIntent.data = Uri.fromFile(imageFile)
             context.sendBroadcast(mediaScanIntent)
 
-            statusText.text = "Guardado en álbum UXIA"
-
-/*            // Mostrar toast
             handler.post {
-                Toast.makeText(
-                    context,
-                    "Imagen guardada en álbum UXIA",
-                    Toast.LENGTH_LONG
-                ).show()
-            }*/
+                statusText.text = "Guardat a l'àlbum UXIA"
+                btnConnect.text = "Tancar"
+                btnConnect.isEnabled = true
+                btnConnect.setOnClickListener {
+                    dismiss()
+                }
+            }
 
-            // Llamar callback
             callback.onReceivedImage(imageFile)
 
-            // Cerrar después de 3 segundos
-            handler.postDelayed({
-                dismiss()
-            }, 3000)
-
         } catch (e: Exception) {
-            Log.e("Photo", "Error guardando foto: ${e.message}")
-            statusText.text = "Error guardando foto"
-
+            Log.e("Photo", "Error guardant foto: ${e.message}")
             handler.post {
-                Toast.makeText(
-                    context,
-                    "Error guardando imagen: ${e.message}",
-                    Toast.LENGTH_LONG
-                ).show()
+                statusText.text = "Error guardant foto"
+                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
