@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- Color de fons - Verd -->
+    <solid android:color="#4CAF50" />
+
+    <!-- Cantos redondeados -->
+    <corners android:radius="30dp" />
+
+    <!-- Borde opcional (comentado) -->
+    <!--
+    <stroke
+        android:width="2dp"
+        android:color="#388E3C" />
+    -->
+
+    <!-- Padding interior -->
+    <padding
+        android:left="24dp"
+        android:top="12dp"
+        android:right="24dp"
+        android:bottom="12dp" />
+
+</shape>

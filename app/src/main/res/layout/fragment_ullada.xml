@@ -12,25 +12,41 @@
         android:id="@+id/imageViewReceived"
         android:layout_width="300dp"
         android:layout_height="300dp"
-        android:layout_marginBottom="24dp"
+        android:layout_marginBottom="16dp"
         android:scaleType="fitCenter"
         android:background="#F5F5F5"
         android:visibility="gone" />
 
-    <!-- BOTÓN GRANDE PARA RECIBIR IMAGEN -->
-    <Button
-        android:id="@+id/btn_receive_image"
-        android:layout_width="180dp"
-        android:layout_height="180dp"
-        android:text="\nRECIBIR\nIMAGEN"
+    <!-- NOU: ProgressBar per mostrar durant l'enviament al servidor -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginBottom="16dp"
+        android:visibility="gone" />
+
+    <!-- NOU: TextView per mostrar la descripció del servidor -->
+    <TextView
+        android:id="@+id/tvDescription"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:textSize="18sp"
-        android:textStyle="normal"
+        android:textStyle="bold"
+        android:textColor="#476568"
         android:gravity="center"
-        android:background="@drawable/btn_circular_green"
-        android:textColor="#FFFFFF"
-        android:enabled="false"
-        android:alpha="0.6"
-        android:layout_marginBottom="20dp" />
+        android:visibility="gone"
+        android:layout_marginBottom="8dp" />
+
+    <!-- NOU: TextView per mostrar la confiança -->
+    <TextView
+        android:id="@+id/tvConfidence"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:textColor="#8BC6CC"
+        android:gravity="center"
+        android:visibility="gone"
+        android:layout_marginBottom="24dp" />
 
     <!-- BOTÓN GRANDE PARA RECIBIR IMAGEN - MÁS SUTIL -->
     <Button
