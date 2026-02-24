@@ -261,89 +261,96 @@ class UlladaFragment : Fragment(), BLEconnDialog.BLEConnectionCallback {
     private fun processarRespostaServidor(response: String) {
         try {
             val json = JSONObject(response)
+            val status = json.optString("status", "")
 
-            // QUAN EL SERVIDOR ESTIGUI LLEST, REBRÀS ALGUNA COSA AIXÍ:
-            // {
-            //   "descripcio": "Aquesta és una cadira de fusta amb respatller alt",
-            //   "tags": ["cadira", "fusta", "moble", "interior"]
-            // }
+            if (status == "OK") {
+                // Resposta correcta
+                val data = json.getJSONObject("data")
+                val descripcio = data.optString("descripcio", "Descripció no disponible")
 
-            val descripcio = json.optString("descripcio", "Descripció no disponible")
-
-            // Obtenir tags (pot ser un array o un string)
-            val tags = when {
-                json.has("tags") -> {
-                    val tagsJson = json.getJSONArray("tags")
+                val tags = if (data.has("tags")) {
+                    val tagsJson = data.getJSONArray("tags")
                     (0 until tagsJson.length()).map { tagsJson.getString(it) }
+                } else {
+                    emptyList()
                 }
-                json.has("etiquetes") -> {
-                    val tagsJson = json.getJSONArray("etiquetes")
-                    (0 until tagsJson.length()).map { tagsJson.getString(it) }
+
+                requireActivity().runOnUiThread {
+                    tvDescription.text = descripcio
+                    tvDescription.visibility = View.VISIBLE
+
+                    if (tags.isNotEmpty()) {
+                        tvConfidence.text = "${tags.joinToString(" • ")}"
+                        tvConfidence.visibility = View.VISIBLE
+                    }
+
+                    tvStatus.text = "Anàlisi completada"
+                    progressBar.visibility = View.GONE
                 }
-                else -> emptyList()
+
+                // Opcional: TTS
+                locutarDescripcioITags(descripcio, tags)
+
+            } else {
+                // Error del servidor
+                val message = json.optString("message", "Error desconegut")
+                requireActivity().runOnUiThread {
+                    tvStatus.text = "Error del servidor: $message"
+                    progressBar.visibility = View.GONE
+                }
             }
-
-            // Mostrar a la UI
-            tvDescription.text = descripcio
-            tvDescription.visibility = View.VISIBLE
-
-            if (tags.isNotEmpty()) {
-                tvConfidence.text = "Tags: ${tags.joinToString(" • ")}"
-                tvConfidence.visibility = View.VISIBLE
-            }
-
-            // CRIDAR AL TTS PER LOCUTAR
-            locutarDescripcioITags(descripcio, tags)
 
         } catch (e: Exception) {
             Log.e("Ullada", "Error processant resposta: ${e.message}")
-            tvStatus.text = "Error processant resposta del servidor"
+            requireActivity().runOnUiThread {
+                tvStatus.text = "Error processant resposta"
+                progressBar.visibility = View.GONE
+            }
         }
     }
 
     private fun locutarDescripcioITags(descripcio: String, tags: List<String>) {
         try {
-            // Crear el text complet
+            Log.d("Ullada_TTS", "Preparant TTS amb: $descripcio, tags: $tags")
+
             val textPerLocutar = if (tags.isNotEmpty()) {
                 "$descripcio. Tags: ${tags.joinToString(", ")}"
             } else {
                 descripcio
             }
 
-            // Iniciar TTS
+            Log.d("Ullada_TTS", "Text a locutar: $textPerLocutar")
+
             iniciarTTS(textPerLocutar)
 
         } catch (e: Exception) {
-            Log.e("TTS", "Error preparant TTS: ${e.message}")
+            Log.e("Ullada_TTS", "Error preparant TTS: ${e.message}")
         }
     }
 
     private fun iniciarTTS(text: String) {
         try {
             if (textToSpeech == null) {
-                Log.e("TTS", "TTS no inicialitzat")
+                Log.e("Ullada_TTS", "TTS no inicialitzat")
                 return
             }
 
-            // Aturar qualsevol locució anterior
-            textToSpeech?.stop()
+            Log.d("Ullada_TTS", "🔊 Iniciant TTS: $text")
 
-            // Configurar idioma català
+            textToSpeech?.stop()
             textToSpeech?.language = java.util.Locale("ca")
 
-            // Locutar
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 textToSpeech?.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, null)
             } else {
                 textToSpeech?.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null)
             }
 
-            Log.d("TTS", "Locutant: $text")
-
         } catch (e: Exception) {
-            Log.e("TTS", "Error en TTS: ${e.message}")
+            Log.e("Ullada_TTS", "Error en TTS: ${e.message}")
         }
     }
+
 
     // Verificació de permisos (els teus mètodes existents)
     private fun checkBluetoothPermissions(): Boolean {

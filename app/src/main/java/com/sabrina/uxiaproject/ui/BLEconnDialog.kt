@@ -79,6 +79,10 @@ class BLEconnDialog(
 
     private var mtuConfirmed = false
 
+    // Afegeix aquestes variables a la classe BLEconnDialog
+    private var pendingImageData: ByteArray? = null
+    private var pendingImageBitmap: android.graphics.Bitmap? = null
+
     // Timeouts runnables - SENSE anotacions
 // Timeouts runnables - VERSIÓ CORREGIDA
     private val connectionTimeoutRunnable = Runnable {
@@ -169,7 +173,14 @@ class BLEconnDialog(
         }
 
         btnCancel.setOnClickListener {
-            cancelConnection()
+            // Netejar dades pendents
+            pendingImageData = null
+            pendingImageBitmap = null
+            received = false
+
+            disconnect()
+            connectionCallback.onConnectionCancelled()
+            dismiss()
         }
 
         // Connectar automàticament
@@ -530,6 +541,81 @@ class BLEconnDialog(
 
     private fun savePhoto(imageData: ByteArray) {
         try {
+            // ELIMINAR: No guardar encara a la galeria
+            // NOMÉS guardar a memòria temporal per mostrar al diàleg
+
+            // Mostrar imatge al dialog (però NO guardar a disc)
+            handler.post {
+                val bitmap = android.graphics.BitmapFactory.decodeByteArray(imageData, 0, imageData.size)
+                if (bitmap != null) {
+                    tvImage.setImageBitmap(bitmap)
+                    tvImage.visibility = View.VISIBLE
+                    tvStatus.text = "Imatge rebuda correctament"
+                    progressBar.visibility = View.GONE
+                    received = true
+
+                    // Guardar les dades per quan l'usuari premi "Enviar"
+                    pendingImageData = imageData
+                    pendingImageBitmap = bitmap
+
+                    updateUIForReceived()
+
+                    btnConnect.setOnClickListener {
+                        if (received) {
+                            // 1. Capturar les dades abans de netejar
+                            val imageDataToSend = pendingImageData
+                            val imageBitmapToSend = pendingImageBitmap
+
+                            // 2. Netejar immediatament
+                            pendingImageData = null
+                            pendingImageBitmap = null
+
+                            // 3. Verificar que tenim dades
+                            if (imageDataToSend == null) {
+                                Log.e("BLE", "Error: No hi ha dades d'imatge")
+                                safeDismiss()
+                                return@setOnClickListener
+                            }
+
+                            // 4. Executar en thread principal
+                            handler.post {
+                                try {
+                                    // 5. Guardar a galeria
+                                    val savedFile = saveImageToGallery(imageDataToSend)
+
+                                    // 6. Notificar callback
+                                    if (savedFile != null) {
+                                        connectionCallback.onImageReceived(savedFile, imageDataToSend)
+                                    } else {
+                                        Log.e("BLE", "Error guardant imatge")
+                                    }
+
+                                    // 7. Tancar
+                                    safeDisconnect()
+                                    safeDismiss()
+
+                                } catch (e: Exception) {
+                                    Log.e("BLE", "Error en enviament: ${e.message}")
+                                    safeDismiss()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+        } catch (e: Exception) {
+            Log.e("Photo", "Error mostrant foto: ${e.message}")
+            handler.post {
+                tvStatus.text = "Error mostrant foto"
+            }
+        }
+    }
+
+    private fun saveImageToGallery(imageData: ByteArray?): File? {
+        if (imageData == null) return null
+
+        try {
             val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
             val filename = "UXIA_${timestamp}.jpg"
 
@@ -549,38 +635,17 @@ class BLEconnDialog(
             }
 
             Log.d("Photo", "Foto guardada: ${imageFile.absolutePath}")
-            receivedFile = imageFile
-
-            // Mostrar imatge al dialog
-            handler.post {
-                val bitmap = android.graphics.BitmapFactory.decodeByteArray(imageData, 0, imageData.size)
-                if (bitmap != null) {
-                    tvImage.setImageBitmap(bitmap)
-                    tvImage.visibility = View.VISIBLE
-                    tvStatus.text = "Imatge rebuda correctament"
-                    progressBar.visibility = View.GONE
-                    received = true
-                    updateUIForReceived()
-                    btnConnect.setOnClickListener {
-                        if (received) {
-                            handleSendButtonClick(imageData)
-                        }
-                    }
-                }
-            }
 
             // Notificar galeria
             val mediaScanIntent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
             mediaScanIntent.data = Uri.fromFile(imageFile)
             context.sendBroadcast(mediaScanIntent)
 
-            resetPhotoTransfer()
+            return imageFile
 
         } catch (e: Exception) {
             Log.e("Photo", "Error guardant foto: ${e.message}")
-            handler.post {
-                tvStatus.text = "Error guardant foto"
-            }
+            return null
         }
     }
     private fun handleSendButtonClick(imageData: ByteArray) {

@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F8FDFE"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="32dp"
+        android:gravity="center_horizontal">
+
+        <!-- Logo o icona (opcional) -->
+        <ImageView
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:src="@drawable/ic_launcher_foreground"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone" />
+
+        <!-- Títol -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Crea un compte"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="#476568"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Uneix-te a UXIA"
+            android:textSize="16sp"
+            android:textColor="#8BC6CC"
+            android:layout_marginBottom="32dp" />
+
+        <!-- Camp Nickname -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Nom d'usuari"
+            android:textSize="14sp"
+            android:textColor="#476568"
+            android:layout_marginBottom="4dp" />
+
+        <EditText
+            android:id="@+id/etNickname"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Ex: uxia_user"
+            android:inputType="textPersonName"
+            android:padding="16dp"
+            android:background="@drawable/border_highlight"
+            android:layout_marginBottom="16dp"
+            android:maxLength="20" />
+
+        <!-- Camp Telèfon -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Telèfon"
+            android:textSize="14sp"
+            android:textColor="#476568"
+            android:layout_marginBottom="4dp" />
+
+        <EditText
+            android:id="@+id/etPhone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Ex: 612345678"
+            android:inputType="phone"
+            android:padding="16dp"
+            android:background="@drawable/border_highlight"
+            android:layout_marginBottom="16dp"
+            android:maxLength="15" />
+
+        <!-- Camp Email -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Correu electrònic"
+            android:textSize="14sp"
+            android:textColor="#476568"
+            android:layout_marginBottom="4dp" />
+
+        <EditText
+            android:id="@+id/etEmail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Ex: usuari@exemple.com"
+            android:inputType="textEmailAddress"
+            android:padding="16dp"
+            android:background="@drawable/border_highlight"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Botó de registre -->
+        <Button
+            android:id="@+id/btnRegister"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="REGISTRAR-SE"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/btn_circular_green"
+            android:enabled="false"
+            android:alpha="0.6"
+            android:layout_marginBottom="16dp" />
+
+        <!-- ProgressBar -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Missatge d'error -->
+        <TextView
+            android:id="@+id/tvError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="#FF0000"
+            android:gravity="center"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp"
+            android:padding="8dp" />
+
+        <!-- Separador -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E0E0E0"
+            android:layout_marginVertical="16dp" />
+
+        <!-- Termes i condicions -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="En registrar-te, acceptes els Termes i Condicions"
+            android:textSize="12sp"
+            android:textColor="#999999"
+            android:layout_marginTop="24dp"
+            android:gravity="center" />
+
+    </LinearLayout>
+</ScrollView>
